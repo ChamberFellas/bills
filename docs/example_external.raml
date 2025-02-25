@@ -1,0 +1,36 @@
+#%RAML 1.0
+title: Example External API
+version: v1
+baseUri: https://example.com/api/v1/external
+mediaType: application/json
+
+/status:
+    get:
+        description: Get status of the external API
+        responses:
+            200:
+                description: Status of the external API
+                body:
+                    application/json:
+                        type: object
+                        properties:
+                            status: string
+                            message: string
+
+            404:
+                description: Not Found
+                body:
+                    application/json:
+                        type: object
+                        properties:
+                            status: string
+                            message: string
+
+            500:
+                description: Internal Server Error
+                body:
+                    application/json:
+                        type: object
+                        properties:
+                            status: string
+                            message: string
