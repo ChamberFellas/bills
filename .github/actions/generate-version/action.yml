@@ -1,0 +1,19 @@
+name: "Extract Version Info"
+description: "Extracts short SHA and repo name for tagging"
+outputs:
+  short_sha:
+    description: "Short SHA for the current commit"
+    value: ${{ steps.extract.outputs.short_sha }}
+  repo_name:
+    description: "Repository name"
+    value: ${{ steps.extract.outputs.repo_name }}
+runs:
+  using: "composite"
+  steps:
+    - name: Extract version info
+      id: extract
+      shell: bash
+      run: |
+        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+        echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+        echo "repo_name=${{ github.event.repository.name }}" >> $GITHUB_OUTPUT

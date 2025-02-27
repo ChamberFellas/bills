@@ -1,0 +1,62 @@
+name: Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run Unit Tests
+        uses: ./.github/actions/unit-tests
+        with:
+          working-directory: "./"
+
+  build:
+    needs: unit_tests
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.version.outputs.short_sha }}
+      repo_name: ${{ steps.version.outputs.repo_name }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Extract Version Info
+        id: version
+        uses: ./.github/actions/generate-version
+
+      - name: Echo Version Info
+        run: |
+          echo "Version Info: ${{ steps.version.outputs.short_sha }}"
+
+      - name: Build and Push Docker Image
+        uses: ./.github/actions/docker-build
+        with:
+          repo-name: ${{ steps.version.outputs.repo_name }}
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSKEY }}
+          image-tag: ${{ steps.version.outputs.short_sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Update Kubernetes Config
+        uses: ./.github/actions/update-k8s-config
+        with:
+          gh-token: ${{ secrets.GH_PAT }}
+          config-repo: "ChamberFellas/kustomize-config"
+          repo-name: ${{ needs.build.outputs.repo_name }}
+          image-tag: ${{ needs.build.outputs.image_tag }}
+
+      - name: Deployment Notification
+        run: echo "Image updated in k8s-config repo. ArgoCD will deploy the new version."

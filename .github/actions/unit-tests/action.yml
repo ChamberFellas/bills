@@ -1,0 +1,19 @@
+name: "Run Unit Tests"
+description: "Installs dependencies and runs unit tests"
+inputs:
+  working-directory:
+    description: "Directory containing the project"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Dependencies
+      shell: bash
+      run: yarn
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Run Unit Tests
+      shell: bash
+      run: yarn test-unit
+      working-directory: ${{ inputs.working-directory }}

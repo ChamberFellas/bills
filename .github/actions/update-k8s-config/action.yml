@@ -1,0 +1,36 @@
+name: "Update Kubernetes Config"
+description: "Updates the k8s config repo with the new image tag"
+inputs:
+  gh-token:
+    description: "GitHub Personal Access Token"
+    required: true
+  config-repo:
+    description: "Kubernetes configuration repository name"
+    required: true
+  repo-name:
+    description: "The name of the repository"
+    required: true
+  image-tag:
+    description: "The new image tag"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clone the k8s config repo
+      shell: bash
+      run: |
+        # Clone the k8s config repository
+        git clone https://x-access-token:${{ inputs.gh-token }}@github.com/${{ inputs.config-repo }}.git config-repo
+        cd config-repo
+
+        # Update the image tag in kustomization.yaml
+        # Path pattern should match your k8s config repo structure
+        sed -i "s|newTag: .*|newTag: ${{ inputs.image-tag }}|" apps/${{ inputs.repo-name }}-app/overlays/prod/kustomization.yaml
+
+        # Commit and push the changes
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add .
+        git commit -m "Update ${{ inputs.repo-name }} image to ${{ inputs.image-tag }}"
+        git push
