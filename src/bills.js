@@ -45,6 +45,8 @@ var uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.net
 var index = express();
 index.use(express.json());
 var payee = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d88');
+//to test if finding/displaying the bills the user needs to pay are working
+var user = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d14');
 index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var _a, Item, Amount, Status, Deadline, Recurring, payorIds, payors, bill, result, err_1;
     return __generator(this, function (_b) {
@@ -105,6 +107,48 @@ index.get('/all-bill', function (req, res) { return __awaiter(void 0, void 0, vo
         }
     });
 }); });
+index.get('/bills-to-pay', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var billsToPay, err_3;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                console.log("Finding bills where ", user, " is a payor.");
+                return [4 /*yield*/, item_1.default.find({ "Payors.payorId": user })];
+            case 1:
+                billsToPay = _a.sent();
+                res.json(billsToPay);
+                return [3 /*break*/, 3];
+            case 2:
+                err_3 = _a.sent();
+                console.error(err_3);
+                res.status(500).json({ error: 'Could not fetch bills to pay.' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+index.get('/bills-owed', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var billsOwed, err_4;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                console.log("Finding bills where ", user, " is a payee.");
+                return [4 /*yield*/, item_1.default.find({ Payee: user })];
+            case 1:
+                billsOwed = _a.sent();
+                res.json(billsOwed);
+                return [3 /*break*/, 3];
+            case 2:
+                err_4 = _a.sent();
+                console.error(err_4);
+                res.status(500).json({ error: 'Could not fetch bills owed.' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
 mongoose_1.default.connect(uri)
     .then(function (result) {
     console.log('connected to bills db');
@@ -112,3 +156,13 @@ mongoose_1.default.connect(uri)
 })
     .catch(function (err) { return console.log(err); });
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+// Flagging system
+// Edit bills
+// Delete bills
+// Recurring bills
+// Getting all bills - only return relevant bills, ideally in order of deadlines
+// app.get('/get-email/:userID)
+// user should not need to type their own user id (remove payee like autofill) KINDA DONE
+// individual payor status for bills DONE
+// displaying all of current users unpaid bills
+// display all bills with current user as payee

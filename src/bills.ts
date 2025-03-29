@@ -14,6 +14,9 @@ const index = express();
 index.use(express.json());
 const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
 
+//to test if finding/displaying the bills the user needs to pay are working
+const user = new mongoose.Types.ObjectId('67bf910446216131dd018d14');
+
 index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
   try {
     
@@ -76,6 +79,35 @@ index.get('/all-bill', async (req: Request, res: Response) => {
   }
 });
 
+
+index.get('/bills-to-pay', async (req: Request, res: Response) => {
+  try {
+    console.log("Finding bills where ", user, " is a payor.");
+
+    //Find bills where the user is in the Payors list
+    const billsToPay = await Bill.find({ "Payors.payorId": user });
+
+    res.json(billsToPay);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch bills to pay.' });
+  }
+});
+
+index.get('/bills-owed', async (req: Request, res: Response) => {
+  try {
+    console.log("Finding bills where ", user, " is a payee.");
+
+    //Find bills where the user is owed money
+    const billsOwed = await Bill.find({ Payee: user });
+
+    res.json(billsOwed);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch bills owed.' });
+  }
+});
+
 mongoose.connect(uri)
   .then((result) => {
     console.log('connected to bills db');
@@ -96,5 +128,5 @@ mongoose.connect(uri)
 
 // user should not need to type their own user id (remove payee like autofill) KINDA DONE
 // individual payor status for bills DONE
-// displaying all of current users unpaid bills
-// display all bills with current user as payee
+// displaying all of current users unpaid bills DONE
+// display all bills with current user as payee DONE
