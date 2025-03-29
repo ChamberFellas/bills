@@ -44,29 +44,29 @@ var item_1 = require("./models/item");
 var uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.net/Bills";
 var index = express();
 index.use(express.json());
-// mongoose.connect(uri)
-//   .then((result) => {
-//     console.log('connected to bills db');
-//     index.listen(3000, () => console.log("Server running on port 3000"));
-//   })
-//   .catch((err: any) => console.log(err));
+var payee = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d88');
 index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, Item, Payee, Amount, Status, Deadline, Recurring, userID, Payors, bill, result, err_1;
+    var _a, Item, Amount, Status, Deadline, Recurring, payorIds, payors, bill, result, err_1;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
                 _b.trys.push([0, 2, , 3]);
-                _a = req.body, Item = _a.Item, Payee = _a.Payee, Amount = _a.Amount, Status = _a.Status, Deadline = _a.Deadline, Recurring = _a.Recurring, userID = _a.userID, Payors = _a.Payors;
+                _a = req.body, Item = _a.Item, Amount = _a.Amount, Status = _a.Status, Deadline = _a.Deadline, Recurring = _a.Recurring, payorIds = _a.Payors;
+                // const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d82')
                 // Validate Amount type
                 if (typeof Amount !== 'number') {
                     res.status(400).send({ error: 'Amount must be a number.' });
                     return [2 /*return*/];
                 }
+                payors = payorIds.map(function (payorId) { return ({
+                    payorId: payorId,
+                    status: 'Unpaid', // Default status for each payor
+                }); });
                 bill = new item_1.default({
                     Item: Item,
-                    Payee: Payee,
+                    Payee: payee,
                     Amount: Amount,
-                    Payors: Payors,
+                    Payors: payors,
                     Status: Status,
                     Deadline: Deadline,
                     Recurring: Recurring,
@@ -111,40 +111,4 @@ mongoose_1.default.connect(uri)
     index.listen(3000, function () { return console.log("Server running on port 3000"); });
 })
     .catch(function (err) { return console.log(err); });
-// index.get('/add-bill', (req, res) => {
-//   const bill = new Bill ({
-//     Item: 'Toilet paper',
-//     Payee: '0',
-//     Amount: '5.00',
-//     Payors: ["Ayushi", "Aleena", "Felix", "Shatakshi", "Finn", "Talia"],
-//     Status: 'Unpaid',
-//     Deadline: '2025-03-10',
-//     Recurring: 'Weekly',
-//     Flag: 'true'
-//   });
-//   bill.save()
-//     .then((result) => {
-//       res.send(result)
-//     })
-//     .catch((err) => {
-//       console.log(err)
-//     });
-// })
-// index.get('/all-bills', (req, res) => {
-//   Bill.find()
-//     .then((result) => {
-//       res.send(result);
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// })
-// index.get('/single-blog', (req, res) => {
-//   Blog.findById('67bf910446216131dd018d82')
-//     .then((result) => {
-//       res.send(result)
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//     });
-// })
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"

@@ -12,17 +12,27 @@ const uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.n
 
 const index = express();
 index.use(express.json());
+const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
 
 index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
   try {
     
-    const { Item, Payee, Amount, Status, Deadline, Recurring, userID, Payors } = req.body;
+    // const { Item, Payee, Amount, Status, Deadline, Recurring, Payors } = req.body;
+    const { Item, Amount, Status, Deadline, Recurring, Payors: payorIds } = req.body;
     
+    // const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d82')
+
     // Validate Amount type
     if (typeof Amount !== 'number') {
       res.status(400).send({ error: 'Amount must be a number.' });
       return;
     }
+
+    // Create Payors array with payorIds and default status as 'Unpaid'
+    const payors = payorIds.map((payorId: string) => ({
+      payorId,
+      status: 'Unpaid',  // Default status for each payor
+    }));
     
     //let payors = [];
     // if (userID) {
@@ -40,9 +50,9 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
     
     const bill = new Bill({
       Item,
-      Payee,
+      Payee: payee,
       Amount,
-      Payors,
+      Payors: payors,
       Status,
       Deadline,   
       Recurring,
@@ -74,6 +84,17 @@ mongoose.connect(uri)
   .catch((err: any) => console.log(err));
 
 
-// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"Alice\", \"Bob\"]}"
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
 
+// Flagging system
+// Edit bills
+// Delete bills
+// Recurring bills
+// Getting all bills - only return relevant bills, ideally in order of deadlines
 
+// app.get('/get-email/:userID)
+
+// user should not need to type their own user id (remove payee like autofill) KINDA DONE
+// individual payor status for bills DONE
+// displaying all of current users unpaid bills
+// display all bills with current user as payee

@@ -12,22 +12,28 @@ const billSchema = new mongoose.Schema({
         required: true
     },
     Payee: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true
     },
     Amount: {
         type: Number,
         required: true
     }, 
-    Payors: {
-        type: [String],
-        required: true
-    }, 
-    Status: {
-        type: String, 
-        enum: ['Unpaid', 'Paid', 'Confirmed'],
-        required: true
-    }, 
+    // Payors: {
+    //     type: [String],
+    //     required: true
+    // }, 
+    Payors: [{
+        payorId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true
+        }, 
+        status: {
+            type: String, 
+            enum: ['Unpaid', 'Paid', 'Confirmed'],
+            required: true
+        }
+    }], 
     Deadline: {
         type: Date,
         required: false 
