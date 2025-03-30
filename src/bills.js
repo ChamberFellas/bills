@@ -39,6 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var express = require("express");
 var mongoose_1 = require("mongoose");
 var item_1 = require("./models/item");
+//import cron from 'node-cron';
+var cron = require("node-cron");
 // import User from './models/User';
 // import House from '.models/house';
 var uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.net/Bills";
@@ -47,8 +49,82 @@ index.use(express.json());
 var payee = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d88');
 //to test if finding/displaying the bills the user needs to pay are working
 var user = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d14');
+var generateNextDate = function (currentDate, recurringType) {
+    var nextDate = new Date(currentDate);
+    if (recurringType === 'Weekly') {
+        nextDate.setDate(nextDate.getDate() + 7);
+    }
+    else if (recurringType === 'Biweekly') {
+        nextDate.setDate(nextDate.getDate() + 14);
+    }
+    else if (recurringType === 'Monthly') {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+    }
+    return nextDate;
+};
+cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var today, overdueBills, _i, overdueBills_1, bill, newDueDate, existingBill, newBill, err_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                console.log("Checking for recurring bills..");
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 8, , 9]);
+                today = new Date();
+                return [4 /*yield*/, item_1.default.find({
+                        Recurring: { $ne: 'None' },
+                        Deadline: { $lte: today },
+                    })];
+            case 2:
+                overdueBills = _a.sent();
+                _i = 0, overdueBills_1 = overdueBills;
+                _a.label = 3;
+            case 3:
+                if (!(_i < overdueBills_1.length)) return [3 /*break*/, 7];
+                bill = overdueBills_1[_i];
+                newDueDate = generateNextDate(bill.Deadline, bill.Recurring);
+                return [4 /*yield*/, item_1.default.findOne({
+                        Payee: bill.Payee,
+                        Item: bill.Item,
+                        Deadline: newDueDate,
+                        Recurring: bill.Recurring,
+                    })];
+            case 4:
+                existingBill = _a.sent();
+                if (existingBill) {
+                    return [3 /*break*/, 6];
+                }
+                newBill = new item_1.default({
+                    Item: bill.Item,
+                    Payee: bill.Payee,
+                    Amount: bill.Amount,
+                    Payors: bill.Payors.map(function (payors) { return ({
+                        payorId: payors.payorId,
+                        status: 'Unpaid'
+                    }); }),
+                    Deadline: newDueDate,
+                    Recurring: bill.Recurring
+                });
+                return [4 /*yield*/, newBill.save()];
+            case 5:
+                _a.sent();
+                console.log("New recurring bill created for ", bill.Item, "due: ", newDueDate);
+                _a.label = 6;
+            case 6:
+                _i++;
+                return [3 /*break*/, 3];
+            case 7: return [3 /*break*/, 9];
+            case 8:
+                err_1 = _a.sent();
+                console.error("Error generating recurring bills:", err_1);
+                return [3 /*break*/, 9];
+            case 9: return [2 /*return*/];
+        }
+    });
+}); });
 index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, Item, Amount, Status, Deadline, Recurring, payorIds, payors, bill, result, err_1;
+    var _a, Item, Amount, Status, Deadline, Recurring, payorIds, payors, bill, result, err_2;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -79,8 +155,8 @@ index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, v
                 res.status(201).json(result);
                 return [3 /*break*/, 3];
             case 2:
-                err_1 = _b.sent();
-                console.error(err_1);
+                err_2 = _b.sent();
+                console.error(err_2);
                 res.status(500).json({ error: 'Error occurred while adding bill' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
@@ -88,7 +164,7 @@ index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, v
     });
 }); });
 index.get('/all-bill', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var bills, err_2;
+    var bills, err_3;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -99,8 +175,8 @@ index.get('/all-bill', function (req, res) { return __awaiter(void 0, void 0, vo
                 res.json(bills);
                 return [3 /*break*/, 3];
             case 2:
-                err_2 = _a.sent();
-                console.error(err_2);
+                err_3 = _a.sent();
+                console.error(err_3);
                 res.status(500).json({ error: 'Could not fetch bills.' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
@@ -108,7 +184,7 @@ index.get('/all-bill', function (req, res) { return __awaiter(void 0, void 0, vo
     });
 }); });
 index.get('/bills-to-pay', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var billsToPay, err_3;
+    var billsToPay, err_4;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -120,8 +196,8 @@ index.get('/bills-to-pay', function (req, res) { return __awaiter(void 0, void 0
                 res.json(billsToPay);
                 return [3 /*break*/, 3];
             case 2:
-                err_3 = _a.sent();
-                console.error(err_3);
+                err_4 = _a.sent();
+                console.error(err_4);
                 res.status(500).json({ error: 'Could not fetch bills to pay.' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
@@ -129,7 +205,7 @@ index.get('/bills-to-pay', function (req, res) { return __awaiter(void 0, void 0
     });
 }); });
 index.get('/bills-owed', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var billsOwed, err_4;
+    var bills, unpaidBills, paidBills, err_5;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -137,12 +213,17 @@ index.get('/bills-owed', function (req, res) { return __awaiter(void 0, void 0, 
                 console.log("Finding bills where ", user, " is a payee.");
                 return [4 /*yield*/, item_1.default.find({ Payee: user })];
             case 1:
-                billsOwed = _a.sent();
-                res.json(billsOwed);
+                bills = _a.sent();
+                unpaidBills = bills.filter(function (bill) { return bill.Payors.some(function (payor) { return payor.status == "Unpaid"; }); });
+                paidBills = bills.filter(function (bill) { return bill.Payors.some(function (payors) { return payors.status == "Paid"; }); });
+                res.json({
+                    "You are owed: ": unpaidBills,
+                    "Please confirm you have received: ": paidBills,
+                });
                 return [3 /*break*/, 3];
             case 2:
-                err_4 = _a.sent();
-                console.error(err_4);
+                err_5 = _a.sent();
+                console.error(err_5);
                 res.status(500).json({ error: 'Could not fetch bills owed.' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
@@ -156,7 +237,7 @@ mongoose_1.default.connect(uri)
 })
     .catch(function (err) { return console.log(err); });
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
-// Flagging system
+// Status system
 // Edit bills
 // Delete bills
 // Recurring bills
@@ -164,5 +245,6 @@ mongoose_1.default.connect(uri)
 // app.get('/get-email/:userID)
 // user should not need to type their own user id (remove payee like autofill) KINDA DONE
 // individual payor status for bills DONE
-// displaying all of current users unpaid bills
-// display all bills with current user as payee
+// displaying all of current users unpaid bills DONE
+// display all bills with current user as payee DONE
+// displays bills where the current user needs to confirm receiving 

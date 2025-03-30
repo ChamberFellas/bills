@@ -36,21 +36,21 @@ const billSchema = new mongoose.Schema({
     }], 
     Deadline: {
         type: Date,
-        required: false 
+        required: true 
     },
     Recurring: {
         type: String,
         enum: ['Weekly', 'Biweekly', 'Monthly', 'None'], 
-        required: false
+        required: true
     },
     Flag: {
         type: Boolean,
         required: false
-    }
+    },
     //#endregion#]]]]]]]]]]
 
 }, {timestamps: true});
 
 const Bill = mongoose.model('Bill', billSchema);
 // module.exports = Bill;
-export default Bill;
+export default Bill

@@ -37,17 +37,17 @@ var billSchema = new mongoose_1.default.Schema({
         }],
     Deadline: {
         type: Date,
-        required: false
+        required: true
     },
     Recurring: {
         type: String,
         enum: ['Weekly', 'Biweekly', 'Monthly', 'None'],
-        required: false
+        required: true
     },
     Flag: {
         type: Boolean,
         required: false
-    }
+    },
     //#endregion#]]]]]]]]]]
 }, { timestamps: true });
 var Bill = mongoose_1.default.model('Bill', billSchema);

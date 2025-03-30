@@ -3,7 +3,8 @@ import express = require('express');
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Bill from './models/item';
-
+//import cron from 'node-cron';
+import cron = require('node-cron');
 // import User from './models/User';
 // import House from '.models/house';
 
@@ -16,6 +17,69 @@ const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
 
 //to test if finding/displaying the bills the user needs to pay are working
 const user = new mongoose.Types.ObjectId('67bf910446216131dd018d14');
+
+
+const generateNextDate = (currentDate: Date, recurringType: string): Date => {
+  const nextDate = new Date(currentDate);
+
+  if (recurringType === 'Weekly') {
+    nextDate.setDate(nextDate.getDate() + 7);
+  } else if (recurringType === 'Biweekly') {
+    nextDate.setDate(nextDate.getDate() + 14);
+  } else if (recurringType === 'Monthly') {
+    nextDate.setMonth(nextDate.getMonth() + 1);
+  }
+
+  return nextDate;
+};
+
+cron.schedule('* * * * *', async () => {
+  console.log("Checking for recurring bills..");
+
+  // add thing to check if overdue bills are unpaid and send notifications
+
+  try {
+    const today = new Date();
+
+    const overdueBills = await Bill.find ({
+      Recurring: { $ne: 'None'},
+      Deadline: { $lte: today},
+    });
+
+    for (const bill of overdueBills) {
+      const newDueDate = generateNextDate(bill.Deadline, bill.Recurring);
+      
+      const existingBill = await Bill.findOne({
+        Payee: bill.Payee,
+        Item: bill.Item,
+        Deadline: newDueDate,
+        Recurring: bill.Recurring,
+      });
+
+      if (existingBill) {
+        console.log("No recurring bills need to be created today.")
+        continue;
+      }
+
+      const newBill = new Bill ({
+        Item: bill.Item, 
+        Payee:bill.Payee,
+        Amount: bill.Amount, 
+        Payors: bill.Payors.map(payors => ({
+          payorId: payors.payorId,
+          status: 'Unpaid'
+        })),
+        Deadline: newDueDate,
+        Recurring: bill.Recurring
+      });
+      await newBill.save();
+      console.log("New recurring bill created for ", bill.Item, "due: ", newDueDate);
+    }
+  } catch (err) {
+    console.error("Error generating recurring bills:", err)
+  }
+});
+
 
 index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -99,9 +163,17 @@ index.get('/bills-owed', async (req: Request, res: Response) => {
     console.log("Finding bills where ", user, " is a payee.");
 
     //Find bills where the user is owed money
-    const billsOwed = await Bill.find({ Payee: user });
+    const bills = await Bill.find({ Payee: user });
 
-    res.json(billsOwed);
+    const unpaidBills = bills.filter(bill => bill.Payors.some(payor => payor.status == "Unpaid"));
+
+    const paidBills = bills.filter(bill => bill.Payors.some(payors => payors.status == "Paid"));
+
+
+    res.json({
+      "You are owed: ": unpaidBills,
+      "Please confirm you have received: ":  paidBills,
+    });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: 'Could not fetch bills owed.' });
@@ -118,10 +190,10 @@ mongoose.connect(uri)
 
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
 
-// Flagging system
+// Status system - nned to do the code so that if the user can change it from unpaid to paid to confirmed etc
 // Edit bills
 // Delete bills
-// Recurring bills
+// Recurring bills - DONE (?)
 // Getting all bills - only return relevant bills, ideally in order of deadlines
 
 // app.get('/get-email/:userID)
@@ -130,3 +202,7 @@ mongoose.connect(uri)
 // individual payor status for bills DONE
 // displaying all of current users unpaid bills DONE
 // display all bills with current user as payee DONE
+// displays bills where the current user needs to confirm receiving 
+
+// netstat -ano | findstr :3000
+// taskkill /PID [enter number] /F
