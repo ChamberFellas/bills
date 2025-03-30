@@ -41,39 +41,49 @@ cron.schedule('* * * * *', async () => {
   try {
     const today = new Date();
 
-    const overdueBills = await Bill.find ({
-      Recurring: { $ne: 'None'},
-      Deadline: { $lte: today},
+    const getAllBills = await Bill.find ({
+      "Payors.status": "Unpaid" // Checks if at least one payor has "Unpaid" 
+      // Recurring: { $ne: 'None'},
+      // Deadline: { $lte: today},
     });
 
-    for (const bill of overdueBills) {
-      const newDueDate = generateNextDate(bill.Deadline, bill.Recurring);
-      
-      const existingBill = await Bill.findOne({
-        Payee: bill.Payee,
-        Item: bill.Item,
-        Deadline: newDueDate,
-        Recurring: bill.Recurring,
-      });
+    for (const bill of getAllBills) {
+      if (bill.Deadline == today) {
+        // notify
 
-      if (existingBill) {
-        console.log("No recurring bills need to be created today.")
-        continue;
+        if (bill.Recurring != "None") {
+          const newDueDate = generateNextDate(bill.Deadline, bill.Recurring);
+          const existingBill = await Bill.findOne({
+            Payee: bill.Payee,
+            Item: bill.Item,
+            Deadline: newDueDate,
+            Recurring: bill.Recurring,
+          });
+    
+          if (existingBill) {
+            console.log("No recurring bills need to be created today.")
+            continue;
+          }
+    
+          const newBill = new Bill ({
+            Item: bill.Item, 
+            Payee:bill.Payee,
+            Amount: bill.Amount, 
+            Payors: bill.Payors.map(payors => ({
+              payorId: payors.payorId,
+              status: 'Unpaid'
+            })),
+            Deadline: newDueDate,
+            Recurring: bill.Recurring
+          });
+          await newBill.save();
+          console.log("New recurring bill created for ", bill.Item, "due: ", newDueDate);
+        }
       }
-
-      const newBill = new Bill ({
-        Item: bill.Item, 
-        Payee:bill.Payee,
-        Amount: bill.Amount, 
-        Payors: bill.Payors.map(payors => ({
-          payorId: payors.payorId,
-          status: 'Unpaid'
-        })),
-        Deadline: newDueDate,
-        Recurring: bill.Recurring
-      });
-      await newBill.save();
-      console.log("New recurring bill created for ", bill.Item, "due: ", newDueDate);
+      else if (bill.Deadline.getDate() + 3 == today.getDate()) {
+        // notify
+      }
+      
     }
   } catch (err) {
     console.error("Error generating recurring bills:", err)
@@ -127,6 +137,7 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
     
     const result = await bill.save();
     res.status(201).json(result);
+    // Notify the payees that they owe a new bill!!!
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: 'Error occurred while adding bill' });

@@ -63,26 +63,29 @@ var generateNextDate = function (currentDate, recurringType) {
 };
 // cron.schedule('0 0 * * *', async () => { /* Runs at midnight daily */ });
 cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0, function () {
-    var today, overdueBills, _i, overdueBills_1, bill, newDueDate, existingBill, newBill, err_1;
+    var today, getAllBills, _i, getAllBills_1, bill, newDueDate, existingBill, newBill, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 console.log("Checking for recurring bills..");
                 _a.label = 1;
             case 1:
-                _a.trys.push([1, 8, , 9]);
+                _a.trys.push([1, 10, , 11]);
                 today = new Date();
                 return [4 /*yield*/, item_1.default.find({
-                        Recurring: { $ne: 'None' },
-                        Deadline: { $lte: today },
+                        "Payors.status": "Unpaid" // Checks if at least one payor has "Unpaid" 
+                        // Recurring: { $ne: 'None'},
+                        // Deadline: { $lte: today},
                     })];
             case 2:
-                overdueBills = _a.sent();
-                _i = 0, overdueBills_1 = overdueBills;
+                getAllBills = _a.sent();
+                _i = 0, getAllBills_1 = getAllBills;
                 _a.label = 3;
             case 3:
-                if (!(_i < overdueBills_1.length)) return [3 /*break*/, 7];
-                bill = overdueBills_1[_i];
+                if (!(_i < getAllBills_1.length)) return [3 /*break*/, 9];
+                bill = getAllBills_1[_i];
+                if (!(bill.Deadline == today)) return [3 /*break*/, 7];
+                if (!(bill.Recurring != "None")) return [3 /*break*/, 6];
                 newDueDate = generateNextDate(bill.Deadline, bill.Recurring);
                 return [4 /*yield*/, item_1.default.findOne({
                         Payee: bill.Payee,
@@ -94,7 +97,7 @@ cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0
                 existingBill = _a.sent();
                 if (existingBill) {
                     console.log("No recurring bills need to be created today.");
-                    return [3 /*break*/, 6];
+                    return [3 /*break*/, 8];
                 }
                 newBill = new item_1.default({
                     Item: bill.Item,
@@ -112,15 +115,21 @@ cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0
                 _a.sent();
                 console.log("New recurring bill created for ", bill.Item, "due: ", newDueDate);
                 _a.label = 6;
-            case 6:
+            case 6: return [3 /*break*/, 8];
+            case 7:
+                if (bill.Deadline.getDate() + 3 == today.getDate()) {
+                    // notify
+                }
+                _a.label = 8;
+            case 8:
                 _i++;
                 return [3 /*break*/, 3];
-            case 7: return [3 /*break*/, 9];
-            case 8:
+            case 9: return [3 /*break*/, 11];
+            case 10:
                 err_1 = _a.sent();
                 console.error("Error generating recurring bills:", err_1);
-                return [3 /*break*/, 9];
-            case 9: return [2 /*return*/];
+                return [3 /*break*/, 11];
+            case 11: return [2 /*return*/];
         }
     });
 }); });
