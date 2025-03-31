@@ -44,10 +44,14 @@ var billSchema = new mongoose_1.default.Schema({
         enum: ['Weekly', 'Biweekly', 'Monthly', 'None'],
         required: true
     },
-    Flag: {
-        type: Boolean,
+    Description: {
+        type: String,
         required: false
-    },
+    }
+    // Flag: {
+    //     type: Boolean,
+    //     required: false
+    // },
     //#endregion#]]]]]]]]]]
 }, { timestamps: true });
 var Bill = mongoose_1.default.model('Bill', billSchema);

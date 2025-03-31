@@ -133,6 +133,9 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
     const result = await bill.save();
     res.status(201).json(result);
     // Notify the payees that they owe a new bill!!!
+
+    
+
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: 'Error occurred while adding bill' });
@@ -141,8 +144,9 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
 
 index.get('/all-bill', async (req: Request, res: Response) => {
   try {
+    console.log("Getting bills")
     const bills = await Bill.find();
-    res.json(bills);
+    res.status(200).json(bills);
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: 'Could not fetch bills.' });
