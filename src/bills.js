@@ -45,7 +45,7 @@ var cron = require("node-cron");
 var uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.net/Bills";
 var index = express();
 index.use(express.json());
-var payee = new mongoose_1.default.Types.ObjectId('67bf910446216131dd018d88');
+// const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
 // to test if finding/displaying the bills the user needs to pay are working
 // const user = new mongoose.Types.ObjectId('67bf910446216131dd018d14');
 var generateNextDate = function (currentDate, recurringType) {
@@ -61,8 +61,7 @@ var generateNextDate = function (currentDate, recurringType) {
     }
     return nextDate;
 };
-// cron.schedule('0 0 * * *', async () => { /* Runs at midnight daily */ });
-cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0, function () {
+cron.schedule('0 0 * * *', function () { return __awaiter(void 0, void 0, void 0, function () {
     var today, getAllBills, _i, getAllBills_1, bill, newDueDate, existingBill, newBill, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -134,26 +133,33 @@ cron.schedule('* * * * *', function () { return __awaiter(void 0, void 0, void 0
     });
 }); });
 index.post('/add-bill', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, Item, Amount, Status, Deadline, Recurring, payorIds, payors, bill, result, err_2;
+    var _a, Payee_1, Item, Amount, Status, Deadline, Recurring, payorIds, actualAccount, payors, payeeIndex, bill, result, err_2;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
                 _b.trys.push([0, 2, , 3]);
-                _a = req.body, Item = _a.Item, Amount = _a.Amount, Status = _a.Status, Deadline = _a.Deadline, Recurring = _a.Recurring, payorIds = _a.Payors;
+                _a = req.body, Payee_1 = _a.Payee, Item = _a.Item, Amount = _a.Amount, Status = _a.Status, Deadline = _a.Deadline, Recurring = _a.Recurring, payorIds = _a.Payors;
                 // const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d82')
                 // Validate Amount type
                 if (typeof Amount !== 'number') {
                     res.status(400).send({ error: 'Amount must be a number.' });
                     return [2 /*return*/];
                 }
+                actualAccount = Amount / payorIds.length;
                 payors = payorIds.map(function (payorId) { return ({
                     payorId: payorId,
                     status: 'Unpaid', // Default status for each payor
                 }); });
+                if (payorIds.includes(Payee_1)) {
+                    payeeIndex = payors.findIndex(function (payor) { return payor.payorId === Payee_1; });
+                    if (payeeIndex !== -1) {
+                        payors[payeeIndex].status = "Confirmed";
+                    }
+                }
                 bill = new item_1.default({
                     Item: Item,
-                    Payee: payee,
-                    Amount: Amount,
+                    Payee: Payee_1,
+                    Amount: actualAccount,
                     Payors: payors,
                     Status: Status,
                     Deadline: Deadline,
@@ -414,6 +420,7 @@ mongoose_1.default.connect(uri)
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
 // Test adding a bill
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Sample Recurring Bill\", \"Amount\": 123, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"Weekly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Kit Kats\", \"Payee\": \"67bf910446216131dd018d08\", \"Amount\": 200, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"None\", \"Payors\": [\"67bf910446216131dd018d05\", \"67bf910446216131dd018d06\", \"67bf910446216131dd018d07\", \"67bf910446216131dd018d08\"]}"
 // ------test updating a bill-------
 // Payor marks own bill as paid
 // curl -X PUT "http://localhost:3000/update-bill-status/67e9346cb70ec50344644723" -H "Content-Type: application/json" -d "{\"userId\": \"67bf910446216131dd018d14\", \"payorId\": \"67bf910446216131dd018d14\", \"newStatus\": \"Paid\"}"

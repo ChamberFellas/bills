@@ -12,7 +12,7 @@ const uri = "mongodb+srv://aleenashaiju01:HTHxjwKWgWKjD2Y5@bills.jtyzd.mongodb.n
 
 const index = express();
 index.use(express.json());
-const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
+// const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d88');
 
 // to test if finding/displaying the bills the user needs to pay are working
 // const user = new mongoose.Types.ObjectId('67bf910446216131dd018d14');
@@ -32,8 +32,7 @@ const generateNextDate = (currentDate: Date, recurringType: string): Date => {
   return nextDate;
 };
 
-// cron.schedule('0 0 * * *', async () => { /* Runs at midnight daily */ });
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   console.log("Checking for recurring bills..");
 
   // add thing to check if overdue bills are unpaid and send notifications
@@ -95,7 +94,7 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
   try {
     
     // const { Item, Payee, Amount, Status, Deadline, Recurring, Payors } = req.body;
-    const { Item, Amount, Status, Deadline, Recurring, Payors: payorIds } = req.body;
+    const { Payee, Item, Amount, Status, Deadline, Recurring, Payors: payorIds } = req.body;
     
     // const payee = new mongoose.Types.ObjectId('67bf910446216131dd018d82')
 
@@ -105,30 +104,26 @@ index.post('/add-bill', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const actualAccount = Amount / payorIds.length; 
+
     // Create Payors array with payorIds and default status as 'Unpaid'
     const payors = payorIds.map((payorId: string) => ({
       payorId,
       status: 'Unpaid',  // Default status for each payor
     }));
+
+    if (payorIds.includes(Payee)) {
+      const payeeIndex = payors.findIndex((payor: { payorId: string; status: string }) => payor.payorId === Payee);
+      if (payeeIndex !== -1) {
+        payors[payeeIndex].status = "Confirmed";
+      }
+    }
     
-    //let payors = [];
-    // if (userID) {
-    //   const house = await House.findOne({ members: userID });
-    //   if (housbe) {
-    //     const flatmateIDs = house.members.filter(id => id != userID);
-    //     const flatmates = await User.find({ _id: { $in: flatmateIDs } });
-    //     payors = flatmates.map(user => user.name);
-        
-    //     if (customPayors && Array.isArray(customPayors)) {
-    //       payors = customPayors;
-    //     }
-    //   }
-    // }
     
     const bill = new Bill({
       Item,
-      Payee: payee,
-      Amount,
+      Payee,
+      Amount: actualAccount,
       Payors: payors,
       Status,
       Deadline,   
@@ -364,6 +359,8 @@ mongoose.connect(uri)
 
 // Test adding a bill
 // curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Sample Recurring Bill\", \"Amount\": 123, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"Weekly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Kit Kats\", \"Payee\": \"67bf910446216131dd018d08\", \"Amount\": 200, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"None\", \"Payors\": [\"67bf910446216131dd018d05\", \"67bf910446216131dd018d06\", \"67bf910446216131dd018d07\", \"67bf910446216131dd018d08\"]}"
+
 
 // ------test updating a bill-------
 // Payor marks own bill as paid
