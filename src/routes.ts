@@ -25,7 +25,7 @@ router.post("/add-bill", async (req, res) => {
       return;
     }
 
-    const actualAccount = Amount / payorIds.length;
+    const actualAmount = Amount / payorIds.length;
 
     // Create Payors array with payorIds and default status as 'Unpaid'
     const payors = payorIds.map((payorId: string) => ({
@@ -45,7 +45,7 @@ router.post("/add-bill", async (req, res) => {
     const bill = new Bill({
       Item,
       Payee,
-      Amount: actualAccount,
+      Amount: actualAmount,
       Payors: payors,
       Status,
       Deadline,
@@ -243,10 +243,10 @@ router.put("/edit-bill/:billId", async (req, res) => {
 
     res.json({ message: "Bill updated successfully.", updatedBill });
   } catch (err) {
-    console.error("Error updating bill:", err);
     res
       .status(500)
       .json({ error: "An error occurred while updating the bill." });
+    console.log("Error updating bill:", err);
   }
 });
 
@@ -276,10 +276,11 @@ router.delete("/delete-bill/:billId", async (req, res) => {
 
     res.json({ message: "Bill deleted successfully." });
   } catch (err) {
-    console.error("Error deleting bill:", err);
+
     res
       .status(500)
       .json({ error: "An error occurred while deleting the bill." });
+    console.log("Error deleting bill:", err);
   }
 });
 
