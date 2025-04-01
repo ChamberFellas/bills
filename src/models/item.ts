@@ -1,4 +1,3 @@
-// const mongoose = require('mongoose');
 import mongoose from 'mongoose'
 // const Schema = mongoose.Schema;
 
@@ -19,10 +18,6 @@ const billSchema = new mongoose.Schema({
         type: Number,
         required: true
     }, 
-    // Payors: {
-    //     type: [String],
-    //     required: true
-    // }, 
     Payors: [{
         payorId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -42,19 +37,8 @@ const billSchema = new mongoose.Schema({
         type: String,
         enum: ['Weekly', 'Biweekly', 'Monthly', 'None'], 
         required: true
-    },
-    Description: {
-        type: String,
-        required: false
     }
-    // Flag: {
-    //     type: Boolean,
-    //     required: false
-    // },
-    //#endregion#]]]]]]]]]]
-
 }, {timestamps: true});
 
 const Bill = mongoose.model('Bill', billSchema);
-// module.exports = Bill;
 export default Bill

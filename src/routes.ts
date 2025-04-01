@@ -1,5 +1,8 @@
 import { Router } from "express";
 import Bill from "./models/item";
+import axios from "axios";
+import { Types } from "mongoose";
+import mongoose from "mongoose";
 
 const router = Router();
 
@@ -13,7 +16,6 @@ router.post("/add-bill", async (req, res) => {
       Payee,
       Item,
       Amount,
-      Status,
       Deadline,
       Recurring,
       Payors: payorIds,
@@ -47,7 +49,6 @@ router.post("/add-bill", async (req, res) => {
       Payee,
       Amount: actualAccount,
       Payors: payors,
-      Status,
       Deadline,
       Recurring,
     });
@@ -87,6 +88,21 @@ router.get("/bills-to-pay", async (req, res) => {
     const billsToPay = await Bill.find({ "Payors.payorId": userId }).sort({
       Deadline: 1,
     });
+
+    const simpleBills = [];
+    // const userObjectId = new mongoose.Types.ObjectId(userId); // Convert userId to ObjectId
+    // const userObjectId = userId; // Convert userId to ObjectId
+    for (const bill of billsToPay) {
+      const payorEntry = bill.Payors.find(payor => payor.payorId.equals(userId)); // Find the current user's entry
+
+      simpleBills.push({
+        Name: bill.Item,
+        Amount: bill.Amount,
+        DueDate: bill.Deadline,
+        Paid: payorEntry ? payorEntry.status !== "Unpaid" : false, // Check the user's payment status
+        Recipient: bill.Payee
+      })
+    }
 
     res.json(billsToPay);
   } catch (err) {
@@ -206,7 +222,7 @@ router.put("/update-bill-status/:billId", async (req, res) => {
 router.put("/edit-bill/:billId", async (req, res) => {
   try {
     const { billId } = req.params;
-    const { userId, Item, Amount, Deadline, Recurring, Payors } = req.body;
+    const { userId, Item, Amount, Payors, Deadline, Recurring } = req.body;
 
     // Find the bill by ID
     const bill = await Bill.findById(billId);
@@ -283,4 +299,61 @@ router.delete("/delete-bill/:billId", async (req, res) => {
   }
 });
 
+const testPostBill = async () => {
+  const bill = {
+    _id: new Types.ObjectId(), // Automatically generates a MongoDB ObjectId
+    Item: 'Rent',
+    Payee: new Types.ObjectId(), // Example array of house IDs
+    Amount: 100, // String description within max length
+    Payors: [new Types.ObjectId()], // Set a specific deadline
+    Deadline: new Date('2025-04-05'), // Repeat every 7 days (optional)
+    Recurring: 'None', // Status is either "incomplete" or "complete"
+  };
+
+  try {
+      const response = await axios.post('http://172.26.92.10:3000/bills', { bill });
+      console.log('Response:', response.data);
+  } catch (error: any) {
+      console.error('Error:', error.response?.data || error.message);
+  }
+};
+
 export default router;
+
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Electricity\", \"Payee\": \"John\", \"Amount\": 50, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-10\", \"Recurring\": \"Monthly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+
+// Test adding a bill
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Sample Recurring Bill\", \"Amount\": 123, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"Weekly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+// curl -X POST http://localhost:3000/add-bill -H "Content-Type: application/json" -d "{\"Item\": \"Kit Kats\", \"Payee\": \"67bf910446216131dd018d08\", \"Amount\": 200, \"Status\": \"Unpaid\", \"Deadline\": \"2025-03-30\", \"Recurring\": \"None\", \"Payors\": [\"67bf910446216131dd018d05\", \"67bf910446216131dd018d06\", \"67bf910446216131dd018d07\", \"67bf910446216131dd018d08\"]}"
+
+
+// ------test updating a bill-------
+// Payor marks own bill as paid
+// curl -X PUT "http://localhost:3000/update-bill-status/67e9346cb70ec50344644723" -H "Content-Type: application/json" -d "{\"userId\": \"67bf910446216131dd018d14\", \"payorId\": \"67bf910446216131dd018d14\", \"newStatus\": \"Paid\"}"
+
+// Payor tries to mark someone elses bill as paid (should fail)
+// Payor tries to mark alrd paid bill as paid (idk what should happen)
+// Payee marks bill as confirmed
+// Payor tries to makr bill as confirmed but payee is not valid (should fail)
+// user tries to mark bill as confirmed but is not tthe payor (should fail)
+
+// ---------------testing editing a bill ------------
+// curl -X PUT "http://localhost:3000/edit-bill/67e923b8f86bf385172ca729" -H "Content-Type: application/json" -d "{\"userId\": \"67bf910446216131dd018d88\", \"Item\": \"Updated Electricity Bill\", \"Amount\": 75, \"Deadline\": \"2025-04-15\", \"Recurring\": \"Biweekly\", \"Payors\": [\"67bf910446216131dd018d14\", \"67bf910446216131dd018d56\"]}"
+
+
+// Status system - nned to do the code so that if the user can change it from unpaid to paid to confirmed etc
+// Edit bills
+// Delete bills
+// Recurring bills - DONE (?)
+// Getting all bills - only return relevant bills, ideally in order of deadlines
+
+// app.get('/get-email/:userID)
+
+// user should not need to type their own user id (remove payee like autofill) KINDA DONE
+// individual payor status for bills DONE
+// displaying all of current users unpaid bills DONE
+// display all bills with current user as payee DONE
+// displays bills where the current user needs to confirm receiving 
+
+// netstat -ano | findstr :3000
+// taskkill /PID [enter number] /F
