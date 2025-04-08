@@ -1,0 +1,116 @@
+#%RAML 1.0
+
+---
+
+title: Bills API
+version: v1 
+baseUri: ????
+
+/bills
+	/{BillName}:
+		get:
+			/{retrieveBills}:
+				queryParameters:
+					billID: 
+						displayName: Bill ID
+						type: string
+						description: bill's unique identification code 
+						example: BILL123
+						required: true 
+					responses:
+						200:
+							body:
+								application/json:
+									example:
+										{"item": "Milk",
+                  								 "user": "Ayushi",
+									 	"deadline": "2025-08-08",
+                  							 	"amount": 0.59,
+                  							 	"whoHasToPay": "John",
+                  							 	"whoPaid": "Ayushi"
+                								}
+						404:
+							description: Bill not found
+									
+
+		put:
+
+
+		post:
+		/{createBill}:
+				queryParameters:
+					\{BillName}:
+						get:
+					billID: 
+						displayName: Bill ID
+						type: string
+						description: bill's unique identification code 
+						example: BILL123
+						required: true 
+					item:
+						displayName: Bill
+						type: string
+						description: item to be paid for
+						example: Milk 
+						required: true
+					user:
+						displayName: Payee
+						type: string
+						description: person to be paid 
+						example: Ayushi
+						required: true
+
+					deadline:
+						displayName: Deadline
+						type: date 
+						description: date to pay bill by 
+						example: 08-08-2025
+						required: true 
+
+					amount:
+						displayName: Amount Due
+						type: number
+						description: amount due 
+						example: 0.59
+						required: true
+
+					whoHasToPay: 
+						displayName: Yet to Pay
+						type: string
+						description: you owe money 
+						example: Ayushi
+						required: true 
+
+					whoPaid:
+						displayName: Already Paid
+						type: string
+						description: you have paid the bill
+						example: Ayushi
+						required: true
+			put: 
+				queryParameters: 
+					access_token:
+						displayName: Access Token
+						type: string
+						description: token gives permission to make call 
+						required: true
+
+		delete:
+      				description: Delete a bill by ID
+      					queryParameters: 
+        					access_token:
+          						displayName: Access Token
+          						type: string
+          						description: Token gives permission to delete the bill 
+          					required: true
+      							responses:
+        							200:
+          								description: Bill deleted successfully
+        							403:
+          								description: Unauthorized - Invalid access token
+        							404:
+          								description: Bill not found
+					
+
+
+
